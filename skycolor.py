@@ -27,6 +27,11 @@ def average_color(img, X, Y, step=5):
     return [int(v/N) for v in values]
 
 
+@app.route("/presets")
+def presets_api():
+    return jsonify(PRESETS)
+
+
 @route_preset("/debug/")
 def debug_box(webcam, X, Y):
     img = load_webcam(webcam)
