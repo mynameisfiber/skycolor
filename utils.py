@@ -48,7 +48,8 @@ def route_preset(prefix, *args, **kwargs):
         _ = app.route("{}/<int:x0>,<int:x1>/<int:y0>,<int:y1>".format(prefix),
                       *args, **kwargs)(_)
         _ = app.route("{}/<string:preset>".format(prefix), *args, **kwargs)(_)
-        return _
+        fxn.route = _
+        return fxn
     return wrapper
 
 
