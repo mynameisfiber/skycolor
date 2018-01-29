@@ -2,8 +2,33 @@ from PIL import Image, ImageDraw
 from flask import request
 import requests
 
+from colormath.color_objects import LabColor, sRGBColor
+from colormath.color_conversions import convert_color
+
 from functools import wraps
 from io import BytesIO
+
+
+def image_color(webcam, X, Y):
+    img = load_webcam(webcam)
+    color = average_color(img, X, Y)
+    return color
+
+
+def average_color(img, X, Y, step=5):
+    N = 0
+    values = [0] * len(img.getpixel((0, 0)))
+    for x in range(*X, step):
+        for y in range(*Y, step):
+            N += 1
+            rgb = sRGBColor(*img.getpixel((x, y)), is_upscaled=True)
+            lab = convert_color(rgb, LabColor)
+            lab_values = lab.get_value_tuple()
+            for i, c in enumerate(lab_values):
+                values[i] += c
+    average_lab = LabColor(*[int(v/N) for v in values])
+    average_rgb = convert_color(average_lab, sRGBColor)
+    return average_rgb.get_upscaled_value_tuple()
 
 
 def load_webcam(img_url):

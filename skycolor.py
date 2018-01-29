@@ -1,6 +1,11 @@
-from flask import Flask, jsonify, send_file
+from flask import Flask, jsonify, send_file, request
+from tornado.wsgi import WSGIContainer
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 
+from archiver import Archiver
 from utils import route_preset, load_webcam
+from utils import average_color, image_color
 from utils import draw_rectangle, img_to_io
 
 
@@ -12,19 +17,22 @@ PRESETS = {
         'Y': (0, 25),
     }
 }
+ARCHIVER = Archiver(PRESETS, callback_minutes=15).start()
 route_preset.app = app
 route_preset.presets = PRESETS
 
 
-def average_color(img, X, Y, step=5):
-    N = 0
-    values = [0] * len(img.getpixel((0, 0)))
-    for x in range(*X, step):
-        for y in range(*Y, step):
-            N += 1
-            for i, c in enumerate(img.getpixel((x, y))):
-                values[i] += c
-    return [int(v/N) for v in values]
+@app.route("/archive/<string:location>")
+def get_archive(location):
+    if location not in PRESETS:
+        return jsonify([])
+    try:
+        N = int(request.args.get("N", 96))
+    except ValueError:
+        N = 96
+    finally:
+        N = min(N, 96*7)
+    return jsonify(ARCHIVER.get_last_N(location, N))
 
 
 @app.route("/presets")
@@ -42,14 +50,12 @@ def debug_box(webcam, X, Y):
 
 @route_preset("/color/")
 def color(webcam, X, Y):
-    img = load_webcam(webcam)
-    color = average_color(img, X, Y)
+    color = image_color(webcam, X, Y)
     return jsonify(color)
 
 
 if __name__ == "__main__":
     print("Starting server")
-    app.run(
-        debug=True,
-        host='0.0.0.0',
-    )
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.listen(5000)
+    IOLoop.instance().start()
