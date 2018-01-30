@@ -4,19 +4,13 @@ from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
 from archiver import Archiver
+from presets import PRESETS
 from utils import route_preset, load_webcam
 from utils import average_color, image_color
 from utils import draw_rectangle, img_to_io
 
 
 app = Flask(__name__)
-PRESETS = {
-    "brooklyn": {
-        "webcam": 'http://207.251.86.238/cctv421.jpg',
-        'X': (0, 225),
-        'Y': (0, 25),
-    }
-}
 ARCHIVER = Archiver(PRESETS, callback_minutes=15).start()
 route_preset.app = app
 route_preset.presets = PRESETS
