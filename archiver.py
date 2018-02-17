@@ -37,7 +37,8 @@ class Archiver(object):
             self.periodic_callback = PeriodicCallback(
                 self.log,
                 self.callback_minutes * 60 * 1000
-            ).start()
+            )
+            self.periodic_callback.start()
         now = datetime.now()
         with sqlite3.connect(self.db) as db:
             for location, values in self.locations.items():
