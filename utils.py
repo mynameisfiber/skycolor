@@ -45,14 +45,16 @@ def load_webcam(img_url):
 
 def load_webcam_playlist(playlist):
     items = requests.get(playlist)
+    headers = {"Range": "bytes=0-1000000"}
     for item in items.text.split('\n'):
         item = item.strip()
         if not item.startswith("#"):
             video_url = urljoin(playlist, item)
             try:
-                img_request = requests.get(video_url, stream=True)
+                img_request = requests.get(video_url, headers=headers,
+                                           stream=True)
                 with tempfile.NamedTemporaryFile() as fp:
-                    fp.file.write(img_request.raw.read())
+                    fp.file.write(img_request.raw.read(1000000))
                     fp.file.close()
                     video = cv2.VideoCapture(fp.name)
                     ret, frame = video.read()
