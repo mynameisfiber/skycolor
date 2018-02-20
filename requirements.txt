@@ -3,3 +3,4 @@ tornado
 Pillow
 requests
 colormath
+opencv-python

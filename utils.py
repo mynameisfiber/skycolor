@@ -1,12 +1,15 @@
 from PIL import Image, ImageDraw
 from flask import request
 import requests
+import cv2
 
 from colormath.color_objects import LabColor, sRGBColor
 from colormath.color_conversions import convert_color
 
 from functools import wraps
 from io import BytesIO
+from urllib.parse import urljoin
+import tempfile
 
 
 def image_color(webcam, X, Y):
@@ -32,9 +35,32 @@ def average_color(img, X, Y, step=5):
 
 
 def load_webcam(img_url):
-    img_request = requests.get(img_url, stream=True)
-    img = Image.open(img_request.raw).convert('RGB')
+    if img_url.endswith('.m3u8'):
+        img = load_webcam_playlist(img_url)
+    else:
+        img_request = requests.get(img_url, stream=True)
+        img = Image.open(img_request.raw).convert('RGB')
     return img
+
+
+def load_webcam_playlist(playlist):
+    items = requests.get(playlist)
+    for item in items.text.split('\n'):
+        item = item.strip()
+        if not item.startswith("#"):
+            video_url = urljoin(playlist, item)
+            try:
+                img_request = requests.get(video_url, stream=True)
+                with tempfile.NamedTemporaryFile() as fp:
+                    fp.file.write(img_request.raw.read())
+                    fp.file.close()
+                    video = cv2.VideoCapture(fp.name)
+                    ret, frame = video.read()
+                    if ret:
+                        return Image.fromarray(frame).convert('RGB')
+            except Exception as e:
+                print(e)
+                pass
 
 
 def img_to_io(img):
