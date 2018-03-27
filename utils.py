@@ -59,6 +59,7 @@ def load_webcam_playlist(playlist):
                     video = cv2.VideoCapture(fp.name)
                     ret, frame = video.read()
                     if ret:
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         return Image.fromarray(frame).convert('RGB')
             except Exception as e:
                 print(e)
