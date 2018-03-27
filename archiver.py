@@ -1,4 +1,5 @@
 from tornado.ioloop import IOLoop, PeriodicCallback
+from requests.exceptions import ConnectionError
 from utils import image_color
 from datetime import datetime
 import sqlite3
@@ -42,9 +43,14 @@ class Archiver(object):
         now = datetime.now()
         with sqlite3.connect(self.db) as db:
             for location, values in self.locations.items():
-                color = image_color(**values)
-                db.execute("insert into archive values (?, ?, ?, ?, ?)",
-                           (location, *color, now))
+                try:
+                    color = image_color(**values)
+                    db.execute("insert into archive values (?, ?, ?, ?, ?)",
+                               (location, *color, now))
+                except ConnectionError:
+                    print("Could not connect to webcam:", location)
+                except Exception as e:
+                    print("Could not archive: {}: {}", location, e)
             db.commit()
 
     def get_last_N(self, location, N):
